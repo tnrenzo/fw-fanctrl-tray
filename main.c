@@ -1,16 +1,21 @@
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/un.h>
 #include <string.h>
 
-int main(int argc, char *argv[]) {
+const char CMD_ACTIVE[] = "print current";
+const char CMD_LIST[]   = "print list";
+
+int connect_to_fanctrl() {
     struct sockaddr_un address;
     address.sun_family = AF_UNIX;
     strncpy(address.sun_path,
         "/run/fw-fanctrl/.fw-fanctrl.commands.sock",
-        sizeof(address.sun_path) - 1); // -1 for null terminator \0
+        sizeof(address.sun_path) - 1);
     int SOCKET_FD = socket(AF_UNIX, SOCK_STREAM, 0);
     int rec;
     rec = connect(SOCKET_FD, (const struct sockaddr*) &address, sizeof(address));
@@ -18,21 +23,71 @@ int main(int argc, char *argv[]) {
         perror("failed to connect to socket");
         return -1;
     }
-    char cmd[] = "print list"; // change later
-    rec = send(SOCKET_FD, cmd, sizeof(cmd) - 1, 0);
+    return SOCKET_FD;
+}
+
+int send_command(int SOCKET_FD, const char cmd[]) {
+    int rec = send(SOCKET_FD, cmd, strlen(cmd), 0);
     if (rec == -1) {
         perror("failed to send data to socket");
         return -1;
     }
-    char rec_buf[108];
-    rec = recv(SOCKET_FD, rec_buf, 108, 0);
+    return 0;
+}
+
+int receive_response(int SOCKET_FD, char buf[108], int n) {
+    int rec = recv(SOCKET_FD, buf, n, 0);
     if (rec < 0) {
         perror("failed to receive from socket");
-        return -1;
+        return -1; // this will be fatal, looking at main()
     } else if (rec == 0) {
         perror("socket closed trying to receive");
-        return -1;
+        return -1; // this too
     }
-    printf("%s\n", rec_buf);
+    return rec;
+}
+
+int send2socket(const char CMD[], char *ret, size_t ret_size) {
+    /* Sends CMD to the socket and writes result into ret */
+    int FD = connect_to_fanctrl();
+    if (FD == -1) 
+        return EXIT_FAILURE;
+    int rec = send_command(FD, CMD);
+    if (rec == -1) {
+        close(FD);
+        return EXIT_FAILURE;
+    }
+    rec = receive_response(FD, ret, ret_size - 1);
+    if (rec == -1) {
+        close(FD);
+        return EXIT_FAILURE;
+    }
+    ret[rec] = '\0';
+    close(FD);
+    return rec;
+}
+
+int get_active_strat(char *ret, size_t ret_size) {
+    return send2socket(CMD_ACTIVE, ret, ret_size);
+}
+
+int get_all_strats(char *ret, size_t ret_size) {
+    return send2socket(CMD_LIST, ret, ret_size);
+}
+
+int set_strat(const char* strat, char *ret, size_t ret_size) {
+    char cmd_buf[50];
+    snprintf(cmd_buf, sizeof(cmd_buf), "use %s", strat);
+    return send2socket(cmd_buf, ret, ret_size);
+}
+
+int main() {
+    char str[108];
+    set_strat("medium", str, sizeof(str));
+    printf("\nset_strat output:\n%s\n", str);
+    get_all_strats(str, sizeof(str));
+    printf("\nget_all_strats output:\n%s\n", str);
+    get_active_strat(str, sizeof(str));
+    printf("\nget_active_strat output:\n%s\n", str);
     return 0;
 }
