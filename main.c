@@ -39,10 +39,10 @@ int receive_response(int SOCKET_FD, char buf[108], int n) {
     int rec = recv(SOCKET_FD, buf, n, 0);
     if (rec < 0) {
         perror("failed to receive from socket");
-        return -1; // this will be fatal, looking at main()
+        return -1;
     } else if (rec == 0) {
         perror("socket closed trying to receive");
-        return -1; // this too
+        return -1;
     }
     return rec;
 }
@@ -81,13 +81,48 @@ int set_strat(const char* strat, char *ret, size_t ret_size) {
     return send2socket(cmd_buf, ret, ret_size);
 }
 
+void parse_stratlist(char *to_parse, char *ret) {
+    char *line = strtok(to_parse, "\n");
+
+    ret[0] = '\0';
+
+    while (line != NULL) {
+        if (strncmp(line, "- ", 2) == 0) {
+            strcat(ret, line + 2);
+            strcat(ret, "\n");
+        }
+
+        line = strtok(NULL, "\n");
+    }
+}
+
+void parse_active_strat(char *to_parse, char *ret) {
+    char *start = strchr(to_parse, '\'');
+    
+    if (start != NULL) {
+        start++;  // skip the opening quote
+
+        char *end = strchr(start, '\'');
+        
+        if (end != NULL) {
+            size_t len = end - start;
+            strncpy(ret, start, len);
+            ret[len] = '\0';
+        }
+    }
+}
+
 int main() {
     char str[108];
-    set_strat("medium", str, sizeof(str));
-    printf("\nset_strat output:\n%s\n", str);
-    get_all_strats(str, sizeof(str));
-    printf("\nget_all_strats output:\n%s\n", str);
+    char parsed[256]; 
+    
     get_active_strat(str, sizeof(str));
-    printf("\nget_active_strat output:\n%s\n", str);
+    parse_active_strat(str, parsed);
+    printf("%s", parsed);
+    
+    get_all_strats(str, sizeof(str));
+    parse_stratlist(str, parsed);
+    printf("%s", parsed);
+
     return 0;
 }
