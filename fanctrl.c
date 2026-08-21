@@ -47,8 +47,8 @@ int receive_response(int SOCKET_FD, char buf[108], int n) {
     return rec;
 }
 
+/* Sends CMD to the socket and writes result into ret */
 int send2socket(const char CMD[], char *ret, size_t ret_size) {
-    /* Sends CMD to the socket and writes result into ret */
     int FD = connect_to_fanctrl();
     if (FD == -1) 
         return EXIT_FAILURE;
@@ -112,6 +112,7 @@ void parse_active_strat(char *to_parse, char *ret) {
     }
 }
 
+/*
 int main() {
     char str[108];
     char parsed[256]; 
@@ -126,3 +127,4 @@ int main() {
 
     return 0;
 }
+*/

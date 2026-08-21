@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>framework_dark.png</file>
+        <file>framework_light.png</file>
+    </qresource>
+</RCC>

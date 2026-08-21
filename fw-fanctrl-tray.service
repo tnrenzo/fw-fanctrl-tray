@@ -1,0 +1,12 @@
+[Unit]
+Description=Tray Icon service for fw-fanctrl-tray
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/fw-fanctrl-tray
+Environment=QT_QPA_PLATFORM=wayland
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

@@ -29,6 +29,9 @@
 *.x86_64
 *.hex
 
+build/
+builds/
+
 *.dSYM/
 *.su
 *.idb
@@ -52,7 +55,7 @@ dkms.conf
 
 .nfs*
 
-.vscode/*
+.vscode/
 
 .history/
 
