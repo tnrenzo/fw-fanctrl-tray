@@ -35,5 +35,5 @@ Environment=QT_PLUGIN_PATH=/usr/lib64/qt6/plugins
 Restart=on-failure
 RestartSec=2
 ```
-> [!Info]
+> [!NOTE]
 > On Wayland, you might also want to add `Environment=QT_QPA_PLATFORM=wayland` to the same file
