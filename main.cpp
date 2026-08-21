@@ -2,6 +2,7 @@
 #include "qactiongroup.h"
 #include "qlogging.h"
 #include "qmenu.h"
+#include "qobject.h"
 #include "qstringview.h"
 #include <QApplication>
 #include <QSystemTrayIcon>
@@ -16,7 +17,9 @@ extern "C" {
 
 void iterate_string_add_QA(char str[], const char delim[], QActionGroup *strategyGroup, QMenu &menu) {
     char *line = strtok(str, "\n");
+    qInfo() << "Available Strategies:";
     while (line != NULL) {
+        qInfo() << line;
         QAction *action = menu.addAction(line);
         action->setCheckable(true);
         strategyGroup->addAction(action);
@@ -40,6 +43,7 @@ int main(int argc, char *argv[])
         qCritical() << "System tray is not available";
         return EXIT_FAILURE;
     }
+
     QSystemTrayIcon tray;
     tray.setToolTip("fw-fanctrl");
     tray.setIcon(QIcon(":/icons/framework_dark.png"));
@@ -49,6 +53,10 @@ int main(int argc, char *argv[])
 
     QActionGroup *strategyGroup = new QActionGroup(&menu);
     strategyGroup->setExclusive(true);
+
+    QAction *quitButton = new QAction(&menu);
+    quitButton->setText("Quit");
+    quitButton->setEnabled(true);
     
     char active_strategy[108];
     char parsed_active_strategy[108];
@@ -69,16 +77,25 @@ int main(int argc, char *argv[])
         }
     }
 
+    menu.addSeparator();
+    menu.addAction(quitButton);
+
     QObject::connect(strategyGroup, &QActionGroup::triggered, [&](QAction *action) {
         const QByteArray strategy = action->text().toUtf8();
 
         char response[108];
 
         int result = set_strat(strategy.constData(), response, sizeof(response));
+        qInfo() << "Switching to" << action->text();
 
         if (result < 0) {
             qWarning() << "Failed to set strategy:" << action->text();
         }
+    });
+
+    QObject::connect(quitButton, &QAction::triggered, [=]() {
+        qInfo() << quitButton->text() << "was clicked. Exiting...";
+        QApplication::quit();
     });
 
     tray.show();
