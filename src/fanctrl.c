@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <string.h>
+#include "include/fanctrl.h"
 
 const char CMD_ACTIVE[] = "print current";
 const char CMD_LIST[]   = "print list";

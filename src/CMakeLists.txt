@@ -11,7 +11,7 @@ qt_add_executable(fw-fanctrl-tray
     WIN32 MACOSX_BUNDLE
     main.cpp
     fanctrl.c
-    resources.qrc
+    assets/resources.qrc
 )
 
 target_link_libraries(fw-fanctrl-tray

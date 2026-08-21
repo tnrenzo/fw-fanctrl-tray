@@ -12,7 +12,7 @@
 #include <QFile>
 #include <QActionGroup>
 extern "C" {
-    #include "fanctrl.h"
+    #include "include/fanctrl.h"
 }
 
 void iterate_string_add_QA(char str[], const char delim[], QActionGroup *strategyGroup, QMenu &menu) {
