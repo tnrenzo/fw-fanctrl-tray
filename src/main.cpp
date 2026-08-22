@@ -1,3 +1,4 @@
+#include "qlogging.h"
 #include <QMenu>
 #include <QIcon>
 #include <QDebug>
@@ -8,6 +9,7 @@
 #include <QAction>
 #include <QObject>
 #include <QtLogging>
+#include <QStyleHints>
 #include <QStringView>
 #include <QApplication>
 #include <QActionGroup>
@@ -31,6 +33,13 @@ void iterate_string_add_QAction(char str[], const char delim[], QActionGroup *st
     }
 }
 
+bool isDarkMode()
+{
+    /* Return true if Darkmode, false if Lightmode */
+    const auto scheme = QGuiApplication::styleHints()->colorScheme();
+    return scheme == Qt::ColorScheme::Dark;
+}
+
 int main(int argc, char *argv[])
 {
     qDebug() << "Qt library paths:";
@@ -46,7 +55,16 @@ int main(int argc, char *argv[])
 
     QSystemTrayIcon tray;
     tray.setToolTip("fw-fanctrl");
-    tray.setIcon(QIcon(":/icons/framework_dark.png"));
+
+    if (isDarkMode()) {
+        tray.setIcon(QIcon(":/icons/framework_dark.png"));
+    } else if (!isDarkMode()) {
+        tray.setIcon(QIcon(":/icons/framework_light.png"));
+    } else {
+         // fallback to light and print warning
+        tray.setIcon(QIcon(":/icons/framework_light.png"));
+        qWarning() << "Failed to detect colorscheme. Falling back to light...";
+    }
 
     QMenu menu;
     tray.setContextMenu(&menu);
