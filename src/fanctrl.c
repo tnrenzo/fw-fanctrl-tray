@@ -1,37 +1,36 @@
-#include <fcntl.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <string.h>
-#include <sys/un.h>
-#include <sys/socket.h>
 #include "include/fanctrl.h"
+#include <fcntl.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 
 const char CMD_ACTIVE[] = "print current";
-const char CMD_LIST[]   = "print list";
+const char CMD_LIST[] = "print list";
 
 int connect_to_fanctrl() {
-    struct sockaddr_un address = {
-        AF_UNIX,
-        "/run/fw-fanctrl/.fw-fanctrl.commands.sock"
-    };
+    struct sockaddr_un address = {AF_UNIX,
+                                  "/run/fw-fanctrl/.fw-fanctrl.commands.sock"};
     int tmp = socket(AF_UNIX, SOCK_STREAM, 0);
     if (tmp == -1) {
         perror("Failed to create socket");
         return -1;
     }
     int SOCKET_FD = tmp;
-    int ret = connect(SOCKET_FD, (const struct sockaddr*) &address, sizeof(address));
+    int ret =
+        connect(SOCKET_FD, (const struct sockaddr *)&address, sizeof(address));
     if (ret == -1) {
         perror("Failed to connect to socket");
         goto cleanup;
     }
     return SOCKET_FD;
 
-    cleanup:
-        close(SOCKET_FD);
-        return -1;
+cleanup:
+    close(SOCKET_FD);
+    return -1;
 }
 
 int send_command(int SOCKET_FD, const char cmd[]) {
@@ -55,7 +54,6 @@ int receive_response(int SOCKET_FD, char buf[], int n) {
     return rec;
 }
 
-
 int send2socket(const char CMD[], char *ret, size_t ret_size) {
     /* Sends CMD to the socket and writes result into ret.
     returns -1 on failure or returns number send/received on success */
@@ -73,9 +71,9 @@ int send2socket(const char CMD[], char *ret, size_t ret_size) {
     ret[rec] = '\0';
     goto cleanup;
 
-    cleanup:
-        close(SOCKET_FD);
-        return rec;
+cleanup:
+    close(SOCKET_FD);
+    return rec;
 }
 
 int get_active_strat(char *ret, size_t ret_size) {
@@ -86,7 +84,7 @@ int get_all_strats(char *ret, size_t ret_size) {
     return send2socket(CMD_LIST, ret, ret_size);
 }
 
-int set_strat(const char* strat, char *ret, size_t ret_size) {
+int set_strat(const char *strat, char *ret, size_t ret_size) {
     char cmd_buf[128];
     int r = snprintf(cmd_buf, sizeof(cmd_buf), "use %s", strat);
     if (r < 0) {
@@ -95,7 +93,7 @@ int set_strat(const char* strat, char *ret, size_t ret_size) {
     } else if (r >= sizeof(cmd_buf)) {
         fprintf(stderr, "Buffer length exceeded; string truncated");
         return -1;
-    } 
+    }
     return send2socket(cmd_buf, ret, ret_size);
 }
 
@@ -106,7 +104,8 @@ int parse_stratlist(char *to_parse, char *ret, size_t ret_size) {
     while (line != NULL) {
         if (strncmp(line, "- ", 2) == 0) {
             if (strlen(ret) >= ret_size - 1) {
-                fprintf(stderr, "Output buffer full, remaining strategies dropped");
+                fprintf(stderr,
+                        "Output buffer full, remaining strategies dropped");
                 return -1;
             }
             strncat(ret, line + 2, (ret_size - strlen(ret)) - 1);
@@ -120,14 +119,16 @@ int parse_stratlist(char *to_parse, char *ret, size_t ret_size) {
 int parse_active_strat(char *to_parse, char *ret, size_t ret_size) {
     char *start = strchr(to_parse, '\''); // where the first ' is
     if (start == NULL) {
-        fprintf(stderr, "Failed to find token \"'\" in beginning of active strategy");
+        fprintf(stderr,
+                "Failed to find token \"'\" in beginning of active strategy");
         return -1;
     }
-    start++;  // skip the opening quote
+    start++; // skip the opening quote
 
     char *end = strchr(start, '\''); // where the last ' is
     if (end == NULL) {
-        fprintf(stderr, "Failed to find token \"'\" in ending of active strategy");
+        fprintf(stderr,
+                "Failed to find token \"'\" in ending of active strategy");
         return -1;
     }
     size_t len = end - start;

@@ -1,27 +1,25 @@
 #include "qlogging.h"
-#include <QMenu>
-#include <QIcon>
+#include <QAction>
+#include <QActionGroup>
+#include <QApplication>
 #include <QDebug>
-#include <QMenu>
 #include <QFile>
+#include <QIcon>
+#include <QMenu>
+#include <QObject>
+#include <QStringView>
+#include <QStyleHints>
+#include <QSystemTrayIcon>
+#include <QtLogging>
 #include <cstdio>
 #include <cstring>
-#include <QAction>
-#include <QObject>
-#include <QtLogging>
-#include <QStyleHints>
-#include <QStringView>
-#include <QApplication>
-#include <QActionGroup>
-#include <QApplication>
-#include <QActionGroup>
-#include <QSystemTrayIcon>
 
 extern "C" {
-    #include "include/fanctrl.h"
+#include "include/fanctrl.h"
 }
 
-void iterate_string_add_QAction(char str[], const char delim[], QActionGroup *strategyGroup, QMenu &menu) {
+void iterate_string_add_QAction(char str[], const char delim[],
+                                QActionGroup *strategyGroup, QMenu &menu) {
     char *line = strtok(str, "\n");
     qInfo() << "Available Strategies:";
     while (line != NULL) {
@@ -33,15 +31,13 @@ void iterate_string_add_QAction(char str[], const char delim[], QActionGroup *st
     }
 }
 
-bool isDarkMode()
-{
+bool isDarkMode() {
     /* Return true if Darkmode, false if Lightmode */
     const auto scheme = QGuiApplication::styleHints()->colorScheme();
     return scheme == Qt::ColorScheme::Dark;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     qDebug() << "Qt library paths:";
     for (const QString &path : QCoreApplication::libraryPaths())
         qDebug() << path;
@@ -61,7 +57,7 @@ int main(int argc, char *argv[])
     } else if (!isDarkMode()) {
         tray.setIcon(QIcon(":/icons/framework_light.png"));
     } else {
-         // fallback to light and print warning
+        // fallback to light and print warning
         tray.setIcon(QIcon(":/icons/framework_light.png"));
         qWarning() << "Failed to detect colorscheme. Falling back to light...";
     }
@@ -75,14 +71,16 @@ int main(int argc, char *argv[])
     QAction *quitButton = new QAction(&menu);
     quitButton->setText("Quit");
     quitButton->setEnabled(true);
-    
+
     char active_strategy[256];
     char parsed_active_strategy[256] = "";
     int ret = get_active_strat(active_strategy, sizeof(active_strategy));
     if (ret < 0) {
-        qWarning() << "Failed to get currently active strategy; aborting parsing";
+        qWarning()
+            << "Failed to get currently active strategy; aborting parsing";
     } else {
-        ret = parse_active_strat(active_strategy, parsed_active_strategy, sizeof(parsed_active_strategy));
+        ret = parse_active_strat(active_strategy, parsed_active_strategy,
+                                 sizeof(parsed_active_strategy));
         if (ret < 0) {
             qWarning() << "Failed to parse active strategy";
         }
@@ -94,9 +92,12 @@ int main(int argc, char *argv[])
     if (ret < 0) {
         qWarning() << "Failed to get all strats from socket; aborting parsing";
     } else {
-        ret = parse_stratlist(all_strategies, parsed_strategies, sizeof(parsed_strategies));
+        ret = parse_stratlist(all_strategies, parsed_strategies,
+                              sizeof(parsed_strategies));
         if (ret < 0) {
-            qWarning() << "Failed to parse all strategies. There may be missing ones in the tray.";
+            qWarning()
+                << "Failed to parse all strategies. There may be missing ones "
+                   "in the tray.";
         }
     }
 
@@ -112,17 +113,19 @@ int main(int argc, char *argv[])
     menu.addSeparator();
     menu.addAction(quitButton);
 
-    QObject::connect(strategyGroup, &QActionGroup::triggered, [&](QAction *action) {
-        const QByteArray strategy = action->text().toUtf8();
+    QObject::connect(
+        strategyGroup, &QActionGroup::triggered, [&](QAction *action) {
+            const QByteArray strategy = action->text().toUtf8();
 
-        char response[108];
+            char response[108];
 
-        int result = set_strat(strategy.constData(), response, sizeof(response));
-        qInfo() << "Switching to" << action->text();
-        if (result < 0) {
-            qWarning() << "Failed to set strategy:" << action->text();
-        }
-    });
+            int result =
+                set_strat(strategy.constData(), response, sizeof(response));
+            qInfo() << "Switching to" << action->text();
+            if (result < 0) {
+                qWarning() << "Failed to set strategy:" << action->text();
+            }
+        });
 
     QObject::connect(quitButton, &QAction::triggered, [=]() {
         qInfo() << quitButton->text() << "was clicked. Exiting...";
