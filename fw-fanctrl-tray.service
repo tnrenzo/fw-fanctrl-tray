@@ -6,7 +6,6 @@ PartOf=graphical-session.target
 [Service]
 Type=simple
 ExecStart=%h/.local/bin/fw-fanctrl-tray
-Environment=QT_QPA_PLATFORM=wayland
 Restart=on-failure
 RestartSec=2
 
