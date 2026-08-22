@@ -63,3 +63,5 @@ dkms.conf
 
 .history
 .ionide
+
+*.json
