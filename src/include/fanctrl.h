@@ -24,9 +24,9 @@ int get_all_strats(char *ret, size_t ret_size);
 
 int set_strat(const char *strat, char *ret, size_t ret_size);
 
-void parse_stratlist(char *to_parse, char *ret);
+int parse_stratlist(char *to_parse, char *ret, size_t ret_size);
 
-void parse_active_strat(char *to_parse, char *ret);
+int parse_active_strat(char *to_parse, char *ret, size_t ret_size);
 
 #ifdef __cplusplus
 }

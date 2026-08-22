@@ -1,21 +1,25 @@
-#include "qaction.h"
-#include "qactiongroup.h"
-#include "qlogging.h"
-#include "qmenu.h"
-#include "qobject.h"
-#include "qstringview.h"
-#include <QApplication>
-#include <QSystemTrayIcon>
 #include <QMenu>
 #include <QIcon>
 #include <QDebug>
+#include <QMenu>
 #include <QFile>
+#include <cstdio>
+#include <cstring>
+#include <QAction>
+#include <QObject>
+#include <QtLogging>
+#include <QStringView>
+#include <QApplication>
 #include <QActionGroup>
+#include <QApplication>
+#include <QActionGroup>
+#include <QSystemTrayIcon>
+
 extern "C" {
     #include "include/fanctrl.h"
 }
 
-void iterate_string_add_QA(char str[], const char delim[], QActionGroup *strategyGroup, QMenu &menu) {
+void iterate_string_add_QAction(char str[], const char delim[], QActionGroup *strategyGroup, QMenu &menu) {
     char *line = strtok(str, "\n");
     qInfo() << "Available Strategies:";
     while (line != NULL) {
@@ -33,10 +37,6 @@ int main(int argc, char *argv[])
     for (const QString &path : QCoreApplication::libraryPaths())
         qDebug() << path;
 
-    qDebug() << "QT_PLUGIN_PATH:" << qEnvironmentVariable("QT_PLUGIN_PATH");
-    qDebug() << "QT_QPA_PLATFORM:" << qEnvironmentVariable("QT_QPA_PLATFORM");
-    qDebug() << "QT_PLUGIN_PATH env:" << qEnvironmentVariable("QT_PLUGIN_PATH");
-    
     QApplication app(argc, argv);
 
     if (QSystemTrayIcon::isSystemTrayAvailable() == false) {
@@ -58,17 +58,31 @@ int main(int argc, char *argv[])
     quitButton->setText("Quit");
     quitButton->setEnabled(true);
     
-    char active_strategy[108];
-    char parsed_active_strategy[108];
-    get_active_strat(active_strategy, sizeof(active_strategy));
-    parse_active_strat(active_strategy, parsed_active_strategy);
+    char active_strategy[256];
+    char parsed_active_strategy[256] = "";
+    int ret = get_active_strat(active_strategy, sizeof(active_strategy));
+    if (ret < 0) {
+        qWarning() << "Failed to get currently active strategy; aborting parsing";
+    } else {
+        ret = parse_active_strat(active_strategy, parsed_active_strategy, sizeof(parsed_active_strategy));
+        if (ret < 0) {
+            qWarning() << "Failed to parse active strategy";
+        }
+    }
 
-    char all_strategies[108];
-    char parsed_strategies[108];
-    get_all_strats(all_strategies, sizeof(all_strategies));
-    parse_stratlist(all_strategies, parsed_strategies);
+    char all_strategies[256];
+    char parsed_strategies[256] = "";
+    ret = get_all_strats(all_strategies, sizeof(all_strategies));
+    if (ret < 0) {
+        qWarning() << "Failed to get all strats from socket; aborting parsing";
+    } else {
+        ret = parse_stratlist(all_strategies, parsed_strategies, sizeof(parsed_strategies));
+        if (ret < 0) {
+            qWarning() << "Failed to parse all strategies. There may be missing ones in the tray.";
+        }
+    }
 
-    iterate_string_add_QA(parsed_strategies, "\n", strategyGroup, menu);
+    iterate_string_add_QAction(parsed_strategies, "\n", strategyGroup, menu);
 
     for (QAction *action : strategyGroup->actions()) {
         if (action->text() == parsed_active_strategy) {
@@ -87,7 +101,6 @@ int main(int argc, char *argv[])
 
         int result = set_strat(strategy.constData(), response, sizeof(response));
         qInfo() << "Switching to" << action->text();
-
         if (result < 0) {
             qWarning() << "Failed to set strategy:" << action->text();
         }
@@ -99,6 +112,6 @@ int main(int argc, char *argv[])
     });
 
     tray.show();
-    int result = app.exec();
-    return result;
+    int returncode = app.exec();
+    return returncode;
 }
