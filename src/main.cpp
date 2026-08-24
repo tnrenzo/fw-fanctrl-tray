@@ -38,10 +38,6 @@ bool isDarkMode() {
 }
 
 int main(int argc, char *argv[]) {
-    qDebug() << "Qt library paths:";
-    for (const QString &path : QCoreApplication::libraryPaths())
-        qDebug() << path;
-
     QApplication app(argc, argv);
 
     if (QSystemTrayIcon::isSystemTrayAvailable() == false) {
@@ -54,12 +50,8 @@ int main(int argc, char *argv[]) {
 
     if (isDarkMode()) {
         tray.setIcon(QIcon(":/icons/framework_dark.png"));
-    } else if (!isDarkMode()) {
-        tray.setIcon(QIcon(":/icons/framework_light.png"));
     } else {
-        // fallback to light and print warning
         tray.setIcon(QIcon(":/icons/framework_light.png"));
-        qWarning() << "Failed to detect colorscheme. Falling back to light...";
     }
 
     QMenu menu;
