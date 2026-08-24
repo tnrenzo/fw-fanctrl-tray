@@ -14,6 +14,14 @@ chmod u+x ./install.sh
 
 This will compile and install to `~/.local/bin` and create a systemd service `~/.config/systemd/user/fw-fanctrl-tray.service`
 
+### Requirements
+
+- Qt 6
+- make
+- CMake
+- gcc
+- [fw-fanctrl](https://github.com/TamtamHero/fw-fanctrl)
+
 ### Troubleshooting
 
 If the program instantly crashes on start, the service might not find the Qt plugin path on your system
